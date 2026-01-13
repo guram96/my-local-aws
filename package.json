@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",
+    "@tanstack/react-form": "^1.27.7",
+    "@tanstack/zod-form-adapter": "^0.42.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.562.0",
@@ -22,7 +24,8 @@
     "shadcn": "^3.6.3",
     "sqlite3": "^5.1.7",
     "tailwind-merge": "^3.4.0",
-    "typeorm": "^0.3.28"
+    "typeorm": "^0.3.28",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

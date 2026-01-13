@@ -3,25 +3,40 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useForm } from "@tanstack/react-form";
 import Link from "next/link";
-import * as React from "react";
+import { z } from "zod";
+
+const createAccountSchema = z.object({
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email address"),
+  accountName: z
+    .string()
+    .min(1, "Account name is required")
+    .min(3, "Account name must be at least 3 characters"),
+});
 
 export function CreateAccount() {
-  const [email, setEmail] = React.useState("");
-  const [accountName, setAccountName] = React.useState("");
-  const [isLoading, setIsLoading] = React.useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    setIsLoading(false);
-    // Handle successful signup here
-    console.log("Signup attempt:", { email, accountName });
-  };
+  const form = useForm({
+    defaultValues: {
+      email: "",
+      accountName: "",
+    },
+    onSubmit: async ({ value }) => {
+      // Validate with Zod before submission
+      const result = createAccountSchema.safeParse(value);
+      if (!result.success) {
+        console.error("Validation errors:", result.error.errors);
+        return;
+      }
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Handle successful signup here
+      console.log("Signup attempt:", result.data);
+    },
+  });
 
   return (
     <div className="min-h-screen bg-white">
@@ -136,83 +151,145 @@ export function CreateAccount() {
               Sign up for AWS
             </h1>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                form.handleSubmit();
+              }}
+              className="space-y-6"
+            >
               {/* Root User Email Address Field */}
-              <div className="space-y-2">
-                <Label
-                  htmlFor="email"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Root user email address
-                </Label>
-                <p className="text-sm text-gray-600">
-                  Used for account recovery and as described in the AWS{" "}
-                  <a
-                    href="#"
-                    className="text-[#0073BB] hover:text-[#005277] hover:underline inline-flex items-center gap-1"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      // Handle privacy notice
-                    }}
-                  >
-                    Privacy Notice
-                    <svg
-                      className="w-3 h-3"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+              <form.Field
+                name="email"
+                validators={{
+                  onChange: ({ value }) => {
+                    const fieldSchema = createAccountSchema.shape.email;
+                    const result = fieldSchema.safeParse(value);
+                    if (!result.success) {
+                      return result.error.errors[0]?.message || "Invalid email";
+                    }
+                    return undefined;
+                  },
+                }}
+              >
+                {(field) => (
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor={field.name}
+                      className="text-sm font-medium text-gray-700"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                      />
-                    </svg>
-                  </a>
-                </p>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="h-10 border-gray-300 focus:border-[#FF9900] focus:ring-[#FF9900]"
-                />
-              </div>
+                      Root user email address
+                    </Label>
+                    <p className="text-sm text-gray-600">
+                      Used for account recovery and as described in the AWS{" "}
+                      <a
+                        href="#"
+                        className="text-[#0073BB] hover:text-[#005277] hover:underline inline-flex items-center gap-1"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          // Handle privacy notice
+                        }}
+                      >
+                        Privacy Notice
+                        <svg
+                          className="w-3 h-3"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                          />
+                        </svg>
+                      </a>
+                    </p>
+                    <Input
+                      id={field.name}
+                      type="email"
+                      placeholder="Email address"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      required
+                      className="h-10 border-gray-300 focus:border-[#FF9900] focus:ring-[#FF9900]"
+                    />
+                    {field.state.meta.errors &&
+                      field.state.meta.errors.length > 0 && (
+                        <p className="text-sm text-red-600">
+                          {field.state.meta.errors[0]}
+                        </p>
+                      )}
+                  </div>
+                )}
+              </form.Field>
 
               {/* AWS Account Name Field */}
-              <div className="space-y-2">
-                <Label
-                  htmlFor="account-name"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  AWS account name
-                </Label>
-                <p className="text-sm text-gray-600">
-                  Choose a name for your account. You can change this name in
-                  your account settings after you sign up.
-                </p>
-                <Input
-                  id="account-name"
-                  type="text"
-                  placeholder="Account name"
-                  value={accountName}
-                  onChange={(e) => setAccountName(e.target.value)}
-                  required
-                  className="h-10 border-gray-300 focus:border-[#FF9900] focus:ring-[#FF9900]"
-                />
-              </div>
+              <form.Field
+                name="accountName"
+                validators={{
+                  onChange: ({ value }) => {
+                    const fieldSchema = createAccountSchema.shape.accountName;
+                    const result = fieldSchema.safeParse(value);
+                    if (!result.success) {
+                      return (
+                        result.error.errors[0]?.message ||
+                        "Invalid account name"
+                      );
+                    }
+                    return undefined;
+                  },
+                }}
+              >
+                {(field) => (
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor={field.name}
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      AWS account name
+                    </Label>
+                    <p className="text-sm text-gray-600">
+                      Choose a name for your account. You can change this name
+                      in your account settings after you sign up.
+                    </p>
+                    <Input
+                      id={field.name}
+                      type="text"
+                      placeholder="Account name"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      required
+                      className="h-10 border-gray-300 focus:border-[#FF9900] focus:ring-[#FF9900]"
+                    />
+                    {field.state.meta.errors &&
+                      field.state.meta.errors.length > 0 && (
+                        <p className="text-sm text-red-600">
+                          {field.state.meta.errors[0]}
+                        </p>
+                      )}
+                  </div>
+                )}
+              </form.Field>
 
               {/* Verify Email Address Button */}
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full h-10 bg-[#FF9900] hover:bg-[#E68900] text-white font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-0 shadow-sm"
+              <form.Subscribe
+                selector={(state) => [state.canSubmit, state.isSubmitting]}
               >
-                {isLoading ? "Verifying..." : "Verify email address"}
-              </Button>
+                {([canSubmit, isSubmitting]) => (
+                  <Button
+                    type="submit"
+                    disabled={!canSubmit || isSubmitting}
+                    className="w-full h-10 bg-[#FF9900] hover:bg-[#E68900] text-white font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-0 shadow-sm"
+                  >
+                    {isSubmitting ? "Verifying..." : "Verify email address"}
+                  </Button>
+                )}
+              </form.Subscribe>
 
               {/* OR Separator */}
               <div className="relative">
