@@ -3,38 +3,71 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { authClient } from "@/lib/auth/auth-client";
 import { useForm } from "@tanstack/react-form";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { z } from "zod";
 
 const loginSchema = z.object({
-  accountId: z.string().optional(),
-  username: z.string().min(1, "Username is required"),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
 export function Login() {
+  const router = useRouter();
   // Image URL placeholder - replace with your image URL
   const imageUrl =
     "https://d1.awsstatic.com/onedam/marketing-channels/website/aws/en_US/homepage/console-sign-in/devops-agent.52acb83aeee5eb34663006acf52e5d85fdc94c2c.png"; // Add your image URL here
 
   const form = useForm({
     defaultValues: {
-      accountId: "",
-      username: "",
+      email: "",
       password: "",
     },
     onSubmit: async ({ value }) => {
       // Validate with Zod before submission
       const result = loginSchema.safeParse(value);
       if (!result.success) {
-        console.error("Validation errors:", result.error.errors);
+        // Set field errors from Zod validation
+        result.error.errors.forEach((error) => {
+          const fieldName = error.path[0] as keyof typeof value;
+          form.setFieldMeta(fieldName, (prev) => ({
+            ...prev,
+            errors: [error.message],
+          }));
+        });
         return;
       }
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      // Handle successful login here
-      console.log("Login attempt:", result.data);
+
+      // Call Better Auth signIn.email method
+      await authClient.signIn.email(
+        {
+          email: result.data.email,
+          password: result.data.password,
+          callbackURL: "/console",
+        },
+        {
+          onSuccess: () => {
+            router.push("/console");
+          },
+          onError: (ctx) => {
+            console.error("Sign in error:", ctx.error);
+            // Set a general form error
+            form.setFieldMeta("email", (prev) => ({
+              ...prev,
+              errors: ["Invalid email or password"],
+            }));
+            form.setFieldMeta("password", (prev) => ({
+              ...prev,
+              errors: ["Invalid email or password"],
+            }));
+          },
+        }
+      );
     },
   });
 
@@ -74,7 +107,7 @@ export function Login() {
                 Sign in to your account
               </h1>
               <p className="text-sm text-gray-600 mb-6">
-                Enter your account ID, username, and password
+                Enter your email and password
               </p>
 
               <form
@@ -85,39 +118,16 @@ export function Login() {
                 }}
                 className="space-y-5"
               >
-                {/* Account ID Field */}
-                <form.Field name="accountId">
-                  {(field) => (
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor={field.name}
-                        className="text-sm font-medium text-gray-700"
-                      >
-                        Account ID (optional)
-                      </Label>
-                      <Input
-                        id={field.name}
-                        type="text"
-                        placeholder="Account ID"
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        onBlur={field.handleBlur}
-                        className="h-10 border-gray-300 focus:border-[#FF9900] focus:ring-[#FF9900]"
-                      />
-                    </div>
-                  )}
-                </form.Field>
-
-                {/* Username Field */}
+                {/* Email Field */}
                 <form.Field
-                  name="username"
+                  name="email"
                   validators={{
                     onChange: ({ value }) => {
-                      const fieldSchema = loginSchema.shape.username;
+                      const fieldSchema = loginSchema.shape.email;
                       const result = fieldSchema.safeParse(value);
                       if (!result.success) {
                         return (
-                          result.error.errors[0]?.message || "Invalid username"
+                          result.error.errors[0]?.message || "Invalid email"
                         );
                       }
                       return undefined;
@@ -130,12 +140,12 @@ export function Login() {
                         htmlFor={field.name}
                         className="text-sm font-medium text-gray-700"
                       >
-                        Username
+                        Email
                       </Label>
                       <Input
                         id={field.name}
-                        type="text"
-                        placeholder="Username"
+                        type="email"
+                        placeholder="Email"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
                         onBlur={field.handleBlur}
