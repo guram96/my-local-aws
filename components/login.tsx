@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
 import * as React from "react";
 
 export function Login() {
@@ -13,7 +14,8 @@ export function Login() {
   const [error, setError] = React.useState("");
 
   // Image URL placeholder - replace with your image URL
-  const imageUrl = ""; // Add your image URL here
+  const imageUrl =
+    "https://d1.awsstatic.com/onedam/marketing-channels/website/aws/en_US/homepage/console-sign-in/devops-agent.52acb83aeee5eb34663006acf52e5d85fdc94c2c.png"; // Add your image URL here
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,16 +167,12 @@ export function Login() {
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <p className="text-sm text-center text-gray-600">
                   Don&apos;t have an account?{" "}
-                  <a
-                    href="#"
+                  <Link
+                    href="/create-account"
                     className="text-[#0073BB] hover:text-[#005277] hover:underline font-medium"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      // Handle create account
-                    }}
                   >
                     Create account
-                  </a>
+                  </Link>
                 </p>
               </div>
             </div>
