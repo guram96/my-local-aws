@@ -1,9 +1,6 @@
 "use server";
 
-import {
-  sendVerificationEmail,
-  sendVerificationEmailByEmail,
-} from "../email-verification";
+import { sendVerificationEmail } from "../email-verification";
 
 /**
  * Server action to send verification email by user ID
@@ -41,7 +38,7 @@ export async function sendVerificationEmailByEmailAction(
   baseUrl?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    await sendVerificationEmailByEmail(email, baseUrl);
+    await sendVerificationEmail(email, baseUrl);
     return { success: true };
   } catch (error) {
     const errorMessage =

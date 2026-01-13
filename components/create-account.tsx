@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { sendVerificationEmailByEmailAction } from "@/lib/actions/email-verification";
 import { useForm } from "@tanstack/react-form";
 import Link from "next/link";
 import { z } from "zod";
@@ -31,10 +32,22 @@ export function CreateAccount() {
         console.error("Validation errors:", result.error.errors);
         return;
       }
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      // Handle successful signup here
-      console.log("Signup attempt:", result.data);
+
+      // Call email verification action
+      const verificationResult = await sendVerificationEmailByEmailAction(
+        result.data.email
+      );
+
+      if (verificationResult.success) {
+        console.log("Verification email sent successfully");
+        // Handle successful email verification here
+      } else {
+        console.error(
+          "Failed to send verification email:",
+          verificationResult.error
+        );
+        // Handle error - you might want to show an error message to the user
+      }
     },
   });
 

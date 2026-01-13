@@ -1,14 +1,14 @@
-import crypto from 'crypto';
-import { initializeDatabase } from './db';
-import { User } from '../entities/User';
-import { sendMail } from './email';
+import crypto from "crypto";
+import { User } from "../entities/User";
+import { initializeDatabase } from "./db";
+import { sendMail } from "./email";
 
 /**
  * Generate a secure random token for email verification
  * @returns A random hex string token
  */
 function generateVerificationToken(): string {
-  return crypto.randomBytes(32).toString('hex');
+  return crypto.randomBytes(32).toString("hex");
 }
 
 /**
@@ -18,7 +18,8 @@ function generateVerificationToken(): string {
  * @returns The full verification URL
  */
 function createVerificationUrl(token: string, baseUrl?: string): string {
-  const base = baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const base =
+    baseUrl || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   return `${base}/verify-email?token=${token}`;
 }
 
@@ -32,7 +33,7 @@ function createVerificationEmailTemplate(
   verificationUrl: string,
   userName?: string
 ): string {
-  const name = userName || 'there';
+  const name = userName || "there";
   return `
     <!DOCTYPE html>
     <html>
@@ -86,7 +87,7 @@ function createVerificationEmailText(
   verificationUrl: string,
   userName?: string
 ): string {
-  const name = userName || 'there';
+  const name = userName || "there";
   return `
 Hi ${name},
 
@@ -108,7 +109,7 @@ This link will expire in 24 hours. If you didn't create an account, you can safe
  * @throws Error if user not found or email sending fails
  */
 export async function sendVerificationEmail(
-  userId: number,
+  email: string,
   baseUrl?: string
 ): Promise<void> {
   // Ensure database is initialized
@@ -116,14 +117,16 @@ export async function sendVerificationEmail(
   const userRepository = dataSource.getRepository(User);
 
   // Find the user
-  const user = await userRepository.findOne({ where: { id: userId } });
+  let user = await userRepository.findOne({ where: { email } });
 
   if (!user) {
-    throw new Error('User not found');
+    user = new User();
+    user.email = email;
+    user.password = "";
   }
 
   if (user.emailVerified) {
-    throw new Error('Email is already verified');
+    throw new Error("Email is already verified");
   }
 
   // Generate verification token
@@ -141,39 +144,14 @@ export async function sendVerificationEmail(
 
   // Prepare user name
   const userName = user.firstName
-    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}`
+    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ""}`
     : undefined;
 
   // Send verification email
   await sendMail({
     to: user.email,
-    subject: 'Verify Your Email Address',
+    subject: "Verify Your Email Address",
     html: createVerificationEmailTemplate(verificationUrl, userName),
     text: createVerificationEmailText(verificationUrl, userName),
   });
-}
-
-/**
- * Send email verification email by email address
- * @param email The email address of the user
- * @param baseUrl Optional base URL for the verification link
- * @returns Promise that resolves when email is sent
- * @throws Error if user not found or email sending fails
- */
-export async function sendVerificationEmailByEmail(
-  email: string,
-  baseUrl?: string
-): Promise<void> {
-  // Ensure database is initialized
-  const dataSource = await initializeDatabase();
-  const userRepository = dataSource.getRepository(User);
-
-  // Find the user by email
-  const user = await userRepository.findOne({ where: { email } });
-
-  if (!user) {
-    throw new Error('User not found');
-  }
-
-  await sendVerificationEmail(user.id, baseUrl);
 }
