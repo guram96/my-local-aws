@@ -18,18 +18,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth/auth-client";
 import {
-  Bell,
   ChevronDown,
   Container,
   Grid3x3,
-  HelpCircle,
   Search,
   Server,
-  Settings,
   Terminal,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import ReactTerminal from "react-terminal-component";
+import { NotificationsPopup } from "@/components/notifications-popup";
+import { SupportPopup } from "@/components/support-popup";
+import { SettingsPopup } from "@/components/settings-popup";
 
 export function ConsoleHeader() {
   const [user, setUser] = useState<{ email?: string } | null>(null);
@@ -133,27 +133,9 @@ export function ConsoleHeader() {
                 </div>
               </DrawerContent>
             </Drawer>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-white/10 h-8 w-8"
-            >
-              <Bell className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-white/10 h-8 w-8"
-            >
-              <HelpCircle className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-white hover:bg-white/10 h-8 w-8"
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
+            <NotificationsPopup />
+            <SupportPopup />
+            <SettingsPopup />
 
             {/* Region Dropdown */}
             <DropdownMenu>
