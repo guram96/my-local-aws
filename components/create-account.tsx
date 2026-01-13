@@ -3,51 +3,80 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { sendVerificationEmailByEmailAction } from "@/lib/actions/email-verification";
+import { authClient } from "@/lib/auth/auth-client";
 import { useForm } from "@tanstack/react-form";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { z } from "zod";
 
-const createAccountSchema = z.object({
+const createAccountBaseSchema = z.object({
   email: z
     .string()
     .min(1, "Email is required")
     .email("Please enter a valid email address"),
-  accountName: z
+  name: z
     .string()
-    .min(1, "Account name is required")
-    .min(3, "Account name must be at least 3 characters"),
+    .min(1, "Name is required")
+    .min(3, "Name must be at least 3 characters"),
+  password: z
+    .string()
+    .min(1, "Password is required")
+    .min(8, "Password must be at least 8 characters"),
+  passwordVerification: z.string().min(1, "Password verification is required"),
 });
 
+const createAccountSchema = createAccountBaseSchema.refine(
+  (data) => data.password === data.passwordVerification,
+  {
+    message: "Passwords do not match",
+    path: ["passwordVerification"],
+  }
+);
+
 export function CreateAccount() {
+  const router = useRouter();
+
   const form = useForm({
     defaultValues: {
       email: "",
-      accountName: "",
+      name: "",
+      password: "",
+      passwordVerification: "",
     },
     onSubmit: async ({ value }) => {
       // Validate with Zod before submission
       const result = createAccountSchema.safeParse(value);
       if (!result.success) {
-        console.error("Validation errors:", result.error.errors);
+        // Set field errors from Zod validation
+        result.error.errors.forEach((error) => {
+          const fieldName = error.path[0] as keyof typeof value;
+          form.setFieldMeta(fieldName, (prev) => ({
+            ...prev,
+            errors: [error.message],
+          }));
+        });
         return;
       }
 
-      // Call email verification action
-      const verificationResult = await sendVerificationEmailByEmailAction(
-        result.data.email
+      // Call Better Auth signUp.email method
+      await authClient.signUp.email(
+        {
+          email: result.data.email,
+          name: result.data.name,
+          password: result.data.password,
+          callbackURL: "/console",
+        },
+        {
+          onSuccess: () => {
+            router.push("/console");
+          },
+          onError: (ctx) => {
+            console.error("Sign up error:", ctx.error);
+            // Set a general form error or field-specific error
+            // You might want to show an error message to the user here
+          },
+        }
       );
-
-      if (verificationResult.success) {
-        console.log("Verification email sent successfully");
-        // Handle successful email verification here
-      } else {
-        console.error(
-          "Failed to send verification email:",
-          verificationResult.error
-        );
-        // Handle error - you might want to show an error message to the user
-      }
     },
   });
 
@@ -177,7 +206,7 @@ export function CreateAccount() {
                 name="email"
                 validators={{
                   onChange: ({ value }) => {
-                    const fieldSchema = createAccountSchema.shape.email;
+                    const fieldSchema = createAccountBaseSchema.shape.email;
                     const result = fieldSchema.safeParse(value);
                     if (!result.success) {
                       return result.error.errors[0]?.message || "Invalid email";
@@ -240,18 +269,15 @@ export function CreateAccount() {
                 )}
               </form.Field>
 
-              {/* AWS Account Name Field */}
+              {/* Name Field */}
               <form.Field
-                name="accountName"
+                name="name"
                 validators={{
                   onChange: ({ value }) => {
-                    const fieldSchema = createAccountSchema.shape.accountName;
+                    const fieldSchema = createAccountBaseSchema.shape.name;
                     const result = fieldSchema.safeParse(value);
                     if (!result.success) {
-                      return (
-                        result.error.errors[0]?.message ||
-                        "Invalid account name"
-                      );
+                      return result.error.errors[0]?.message || "Invalid name";
                     }
                     return undefined;
                   },
@@ -263,16 +289,12 @@ export function CreateAccount() {
                       htmlFor={field.name}
                       className="text-sm font-medium text-gray-700"
                     >
-                      AWS account name
+                      Name
                     </Label>
-                    <p className="text-sm text-gray-600">
-                      Choose a name for your account. You can change this name
-                      in your account settings after you sign up.
-                    </p>
                     <Input
                       id={field.name}
                       type="text"
-                      placeholder="Account name"
+                      placeholder="Your name"
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
                       onBlur={field.handleBlur}
@@ -289,7 +311,97 @@ export function CreateAccount() {
                 )}
               </form.Field>
 
-              {/* Verify Email Address Button */}
+              {/* Password Field */}
+              <form.Field
+                name="password"
+                validators={{
+                  onChange: ({ value }) => {
+                    const fieldSchema = createAccountBaseSchema.shape.password;
+                    const result = fieldSchema.safeParse(value);
+                    if (!result.success) {
+                      return (
+                        result.error.errors[0]?.message || "Invalid password"
+                      );
+                    }
+                    return undefined;
+                  },
+                }}
+              >
+                {(field) => (
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor={field.name}
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Password
+                    </Label>
+                    <Input
+                      id={field.name}
+                      type="password"
+                      placeholder="Password"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      required
+                      className="h-10 border-gray-300 focus:border-[#FF9900] focus:ring-[#FF9900]"
+                    />
+                    {field.state.meta.errors &&
+                      field.state.meta.errors.length > 0 && (
+                        <p className="text-sm text-red-600">
+                          {field.state.meta.errors[0]}
+                        </p>
+                      )}
+                  </div>
+                )}
+              </form.Field>
+
+              {/* Password Verification Field */}
+              <form.Field
+                name="passwordVerification"
+                validators={{
+                  onChange: ({ value }) => {
+                    const fieldSchema =
+                      createAccountBaseSchema.shape.passwordVerification;
+                    const result = fieldSchema.safeParse(value);
+                    if (!result.success) {
+                      return (
+                        result.error.errors[0]?.message ||
+                        "Invalid password verification"
+                      );
+                    }
+                    return undefined;
+                  },
+                }}
+              >
+                {(field) => (
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor={field.name}
+                      className="text-sm font-medium text-gray-700"
+                    >
+                      Confirm Password
+                    </Label>
+                    <Input
+                      id={field.name}
+                      type="password"
+                      placeholder="Confirm password"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      required
+                      className="h-10 border-gray-300 focus:border-[#FF9900] focus:ring-[#FF9900]"
+                    />
+                    {field.state.meta.errors &&
+                      field.state.meta.errors.length > 0 && (
+                        <p className="text-sm text-red-600">
+                          {field.state.meta.errors[0]}
+                        </p>
+                      )}
+                  </div>
+                )}
+              </form.Field>
+
+              {/* Sign Up Button */}
               <form.Subscribe
                 selector={(state) => [state.canSubmit, state.isSubmitting]}
               >
@@ -299,7 +411,7 @@ export function CreateAccount() {
                     disabled={!canSubmit || isSubmitting}
                     className="w-full h-10 bg-[#FF9900] hover:bg-[#E68900] text-white font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed border-0 shadow-sm"
                   >
-                    {isSubmitting ? "Verifying..." : "Verify email address"}
+                    {isSubmitting ? "Signing up..." : "Sign up"}
                   </Button>
                 )}
               </form.Subscribe>
