@@ -12,7 +12,8 @@ export async function proxy(request: NextRequest) {
     !pathname.startsWith("/console") &&
     !pathname.startsWith("/api") &&
     !pathname.startsWith("/create-account") &&
-    !pathname.startsWith("/verify-email")
+    !pathname.startsWith("/verify-email") &&
+    !pathname.startsWith("/launch-instance")
   ) {
     return NextResponse.redirect(new URL("/console", request.url));
   }
