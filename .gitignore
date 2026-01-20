@@ -45,3 +45,5 @@ next-env.d.ts
 # database
 *.sqlite
 *.sqlite3
+*.qcow2
+*.iso
