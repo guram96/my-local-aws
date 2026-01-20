@@ -1,5 +1,8 @@
 "use client";
 
+import { NotificationsPopup } from "@/components/notifications-popup";
+import { SettingsPopup } from "@/components/settings-popup";
+import { SupportPopup } from "@/components/support-popup";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -23,15 +26,12 @@ import {
   Grid3x3,
   Search,
   Server,
-  Terminal,
+  Terminal
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import ReactTerminal from "react-terminal-component";
-import { NotificationsPopup } from "@/components/notifications-popup";
-import { SupportPopup } from "@/components/support-popup";
-import { SettingsPopup } from "@/components/settings-popup";
 
-export function ConsoleHeader() {
+export function ConsoleHeader({showSecondBar = true}: {showSecondBar?: boolean}) {
   const [user, setUser] = useState<{ email?: string } | null>(null);
   const [region, setRegion] = useState("Europe (Frankfurt)");
 
@@ -86,7 +86,7 @@ export function ConsoleHeader() {
           <div className="flex items-center gap-4 flex-1">
             {/* AWS Logo */}
             <div className="text-white font-semibold text-lg tracking-tight">
-              aws
+              <a href="/console">aws</a>
             </div>
 
             {/* Services Icon */}
@@ -215,11 +215,11 @@ export function ConsoleHeader() {
       </div>
 
       {/* Second Bar */}
-      <div className="bg-[#1a232e] border-b border-[#0f1419]">
+      {showSecondBar && <div className="bg-[#1a232e] border-b border-[#0f1419]">
         <div className="flex items-center h-10 px-4 gap-4">
           {/* EC2 Link */}
           <a
-            href="#"
+            href="/console/ec2"
             className="flex items-center gap-2 px-3 py-1.5 rounded hover:bg-white/5 transition-colors group"
           >
             <div className="w-5 h-5 rounded bg-[#ff9900] flex items-center justify-center">
@@ -243,7 +243,7 @@ export function ConsoleHeader() {
             </span>
           </a>
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

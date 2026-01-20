@@ -8,8 +8,8 @@ import { Input } from "@/components/ui/input";
 import { ChevronRight, Code, Info, Search } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { checkQemuAction } from "../../lib/actions/check-qemu";
-import { runQemuAction } from "../../lib/actions/run-qemu";
+import { checkQemuAction } from "../../../../lib/actions/check-qemu";
+import { runQemuAction } from "../../../../lib/actions/run-qemu";
 
 export default function LaunchInstancePage() {
   const [selectedOS, setSelectedOS] = useState("amazon-linux");
