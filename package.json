@@ -11,6 +11,7 @@
   "dependencies": {
     "@base-ui/react": "^1.0.0",
     "@tanstack/react-form": "^1.27.7",
+    "@tanstack/react-table": "^8.21.3",
     "@tanstack/zod-form-adapter": "^0.42.1",
     "@types/react-grid-layout": "^2.1.0",
     "bcryptjs": "^3.0.3",
